@@ -18,7 +18,14 @@ end
 always@(req)
  re [4:0]<= req [4:0];
 
-always@(negedge clk )// set gnt if req turned to 1
+always@(rst)
+begin
+if(rst)
+re <= 5'h1f;
+GNT <=5'h1f;
+end
+
+always@(negedge clk  )// set gnt if req turned to 1
 for (i=4;i>=0;i=i-1)
 begin
 if(re[i])
@@ -46,7 +53,8 @@ end
 
 always@(negedge clk or frame ) // (or re) for testing
 begin
-
+if(!rst)
+begin
 // if none takes gnt
 if(GNT == 5'h1f)
 begin
@@ -57,10 +65,9 @@ begin
 GNT[i]<=0;
 gate <= i;
 idle = 0; // adds a transitional 1f cycle <=
-
 end
 end
-
+end // end !rst
 end
 
 endmodule
@@ -80,6 +87,7 @@ always #50 clk=~clk;
 initial 
 begin
 clk=0;
+rst=0;
 #50
 frame=1;
 req=5'b01111;
@@ -87,8 +95,8 @@ req=5'b01111;
 req=5'b00111;
 #120
 //frame=0;
-//#100
-frame=1;
+#300
+rst=1;
 
 end
 
