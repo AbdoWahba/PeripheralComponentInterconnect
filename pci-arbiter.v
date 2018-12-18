@@ -22,7 +22,7 @@ always@(negedge clk )// set gnt if req turned to 1
 for (i=4;i>=0;i=i-1)
 begin
 if(re[i])
-GNT[i] = 1; //( <= ) makes a transitional 1 cycle 1f (after n cycle of req ignore )
+GNT[i] = 1; //( <= ) makes a transitional 1 cycle 1f 
 end
 
 //timer 
@@ -30,11 +30,17 @@ always@(negedge clk , re[gate] )
 begin
 
 if(!re[gate])
-t = t+1; //( <= )makes the clock count inacurate
-if(t== 3)
+t <= t+1; //( <= )makes the clock count more with 1 cycle 
+if(t== 2)
 begin
 t <= 0;
+for(i=4;i>=0;i=i-1)//
+begin
+if(i==gate)
 re[gate] <=1;
+else
+re[i]<= req[i];
+end
 end
 end
 
@@ -50,7 +56,7 @@ if(!re[i]& frame & idle)
 begin
 GNT[i]<=0;
 gate <= i;
-idle = 0; // makes transitional 1f takes 2 clk cycles when <=
+idle = 0; // adds a transitional 1f cycle <=
 
 end
 end
