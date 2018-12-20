@@ -1,3 +1,6 @@
+`timescale 1ns/1ps 
+
+
 module arbitration(clk,rst,frame,req,IRDY,GNT);
 input rst,clk,frame,IRDY;
 input [4:0] req;
@@ -33,6 +36,7 @@ GNT[i] = 1; //( <= ) makes a transitional 1 cycle 1f
 end
 
 //timer 
+/*
 always@(negedge clk , re[gate] )
 begin
 
@@ -49,9 +53,19 @@ else
 re[i]<= req[i];
 end
 end
+end*/
+always@( posedge frame )
+begin
+for(i=4;i>=0;i=i-1)
+begin
+if(i==gate)
+re[gate] <=1;
+else
+re[i]<= req[i];
+end
 end
 
-always@(negedge clk or frame ) // (or re) for testing
+always@(negedge clk  ) // (or re) for testing
 begin
 if(!rst)
 begin
@@ -60,7 +74,7 @@ if(GNT == 5'h1f)
 begin
 idle <=1;// all = 1
 for (i=4;i>=0;i=i-1)
-if(!re[i]& frame & idle)
+if(!re[i]&frame & idle)
 begin
 GNT[i]<=0;
 gate <= i;
@@ -84,6 +98,16 @@ arbitration arb(clk,rst,frame,req,IRDY,GNT);
 
 always #50 clk=~clk;
 
+initial begin
+            /**
+            *    $dumpfile("wave.vcd");
+            *    $dumpvars(0,Device_tb);
+            *       for gtkwave extinsion on linux 
+            */
+            $dumpfile("wave.vcd");
+            $dumpvars(0,arbitre_tb);
+end
+
 initial 
 begin
 clk=0;
@@ -93,12 +117,14 @@ frame=1;
 req=5'b01111;
 #50
 req=5'b00111;
-#120
+#50
+frame=1;
+
 //frame=0;
-#300
-rst=1;
 
 end
+
+initial #6000 $finish;
 
 
 endmodule
