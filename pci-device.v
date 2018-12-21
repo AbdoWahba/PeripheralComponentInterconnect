@@ -1,8 +1,8 @@
 /**
 *   PCI Device module
-*/ 
+*/
 
-`timescale 1ns/1ps 
+`timescale 1ns/1ps
 
 
 `define DEVICE_A_ADDRESS 32'hAD
@@ -18,10 +18,11 @@
 `define DATA_3 32'hCC
 
 /**
-*   TODO: Check Control word values
+*   Source of Control word values
+*   http://www.cisl.columbia.edu/courses/spring-2004/ee4340/handouts/pci.pdf
 */
-`define WRITE_C_BE 4'b0100
-`define READ_C_BE 4'b0001
+`define WRITE_C_BE 4'b0011
+`define READ_C_BE 4'b0010
 
 /**
 *   dumy/random bit enable for transactions
@@ -59,7 +60,7 @@ module Device (
     reg [3:0] control_operation = `WRITE_C_BE;
 
 
-    /** 
+    /**
     *   AD
     *       If Master and Write op ADreg Assigned to AD treat as output
     *       If not Master AD treat as input
@@ -68,30 +69,30 @@ module Device (
     */
     reg [31:0] ADreg;
     assign AD = (~isGrantedAsMaster) ? ADreg : 32'hzzzzzzzz;
-    
-    /** 
+
+    /**
     *   C_BE
     *       If Master C_BEreg Assigned to C_BE treat as output
     *       If not Master C_BE treat as input
     */
     reg [3:0] C_BEreg;
     assign C_BE = (~isGrantedAsMaster) ? C_BEreg : 32'hzzzzzzzz;
-    
-    /** 
+
+    /**
     *   DEVSEL
     *       input as Master and output as Target
     */
     reg DEVSELreg = 1'b1;
     assign DEVSEL = (~isGrantedAsMaster) ? 1'bz : DEVSELreg;
 
-    /** 
+    /**
     *   IRDY
     *       output as Master and input as Target
     */
     reg IRDYreg = 1'b1;
     assign IRDY = (~isGrantedAsMaster) ? IRDYreg : 1'bz;
 
-    /** 
+    /**
     *   TRDY
     *       input as Master and output as Target
     */
@@ -152,9 +153,9 @@ module Device (
     */
     reg FRAMEreg = 1'b1;
     assign FRAME = (~isGrantedAsMaster) ? FRAMEreg : 1'bz;
-    
+
     /**
-    *   addressTransactionOccurredFlag to indecate 1st transaction of selecting 
+    *   addressTransactionOccurredFlag to indecate 1st transaction of selecting
     */
     reg addressTransactionOccurredFlag = 1'b1;
     always @ (negedge clk) begin
@@ -170,7 +171,7 @@ module Device (
         if(addressTransactionOccurredFlag) begin
             if (~isGrantedAsMaster) FRAMEreg <= 1'b0;
             if (~isGrantedAsMaster) ADreg <= `DEVICE_B_ADDRESS;
-            if (~isGrantedAsMaster) begin 
+            if (~isGrantedAsMaster) begin
                 C_BEreg <= `WRITE_C_BE;
                 control_operation <= `WRITE_C_BE;
             end
@@ -256,7 +257,7 @@ module Device (
     reg isGrantedAsTarget = 1'b1;
     always @ (posedge clk) begin
         if(~negFrameFlag) begin
-            if(AD == DEVICE_ADDRESS) begin 
+            if(AD == DEVICE_ADDRESS) begin
                 isGrantedAsTarget <= 1'b0;
                 control_operation <= C_BE;
             end
@@ -294,7 +295,7 @@ endmodule
 /* ** ** ** ** ** ** ** ** ** */
 
 module Device_tb();
-    
+
     reg clk, FREQ;
     wire [31:0] AD;
     wire [3:0] C_BE;
@@ -334,7 +335,7 @@ module Device_tb();
             /**
             *    $dumpfile("wave.vcd");
             *    $dumpvars(0,Device_tb);
-            *       for gtkwave extinsion on linux 
+            *       for gtkwave extinsion on linux
             */
             $dumpfile("wave.vcd");
             $dumpvars(0,Device_tb);
