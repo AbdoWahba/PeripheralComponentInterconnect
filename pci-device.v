@@ -196,9 +196,9 @@ module Device (
     *   IRDY = HIGH && isGrantedAsMaster = HIGH
     */
     always @ (negedge clk) begin
-        if(FRAMEreg && ~isGrantedAsMaster) begin
+        if(FRAMEreg && ~isGrantedAsMaster && numberOfTransactions == 4'b0000) begin
             IRDYreg <= 1'b1;
-            //isGrantedAsMaster <= 1'b1;
+            isGrantedAsMaster <= 1'b1;
         end
     end
 
