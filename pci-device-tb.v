@@ -14,7 +14,7 @@ module Device_tb();
     pullup(TRDY);
     pullup(DEVSEL);
 
-
+    
     Device  devA(
         clk,
         REQA,
