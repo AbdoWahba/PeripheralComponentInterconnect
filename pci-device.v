@@ -98,6 +98,27 @@ module Device (
     reg TRDYreg = 1'b1;
     assign TRDY = (~isGrantedAsMaster) ? 1'bz : TRDYreg;
 
+    /**
+    *   FRAME
+    */
+    
+    /** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** */
+
+    /**
+    *   GNT
+    *       GNT Flag indecate State of device => Master
+    */
+    reg isGrantedAsMaster = 1'b1;
+    always @ (posedge clk) begin
+        /**
+        *   Reading GNT on posedge and save it if Granted - read on posedge
+        */
+        if(~GNT) isGrantedAsMaster <= 1'b0;
+    end
+    
+    reg FRAMEreg = 1'b1;
+    assign FRAME = (~isGrantedAsMaster) ? FRAMEreg : 1'bz;
+
     /** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** */
     /** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** */
     /** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** */
@@ -131,27 +152,8 @@ module Device (
         else REQ <= 1'b1;
     end
 
-    /** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** */
-
-    /**
-    *   GNT
-    *       GNT Flag indecate State of device => Master
-    */
-    reg isGrantedAsMaster = 1'b1;
-    always @ (posedge clk) begin
-        /**
-        *   Reading GNT on posedge and save it if Granted - read on posedge
-        */
-        if(~GNT) isGrantedAsMaster <= 1'b0;
-    end
 
     /** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** */
-
-    /**
-    *   FRAME
-    */
-    reg FRAMEreg = 1'b1;
-    assign FRAME = (~isGrantedAsMaster) ? FRAMEreg : 1'bz;
     
     /**
     *   addressTransactionOccurredFlag to indecate 1st transaction of selecting 
@@ -195,7 +197,7 @@ module Device (
     always @ (negedge clk) begin
         if(FRAMEreg && ~isGrantedAsMaster) begin
             IRDYreg <= 1'b1;
-            isGrantedAsMaster <= 1'b1;
+            //isGrantedAsMaster <= 1'b1;
         end
     end
 
@@ -293,72 +295,3 @@ endmodule
 
 /* ** ** ** ** ** ** ** ** ** */
 
-module Device_tb();
-    
-    reg clk, FREQ;
-    wire [31:0] AD;
-    wire [3:0] C_BE;
-    wire REQA, REQB, FRAME, DEVSEL, IRDY, TRDY;
-    reg GNT;
-
-
-    Device  devA(
-        clk,
-        REQA,
-        FREQ,
-        GNT,
-        AD,
-        C_BE,
-        FRAME,
-        DEVSEL,
-        IRDY,
-        TRDY ,
-        `DEVICE_A_ADDRESS
-        );
-
-    Device  devB(
-        clk,
-        REQB,
-        1'b1,
-        1'b1,
-        AD,
-        C_BE,
-        FRAME,
-        DEVSEL,
-        IRDY,
-        TRDY ,
-        `DEVICE_B_ADDRESS
-        );
-
-        initial begin
-            /**
-            *    $dumpfile("wave.vcd");
-            *    $dumpvars(0,Device_tb);
-            *       for gtkwave extinsion on linux 
-            */
-            $dumpfile("wave.vcd");
-            $dumpvars(0,Device_tb);
-
-            clk <= 0;
-            GNT <= 1;
-            #2 GNT <= 0;
-            #10 GNT <= 1;
-        end
-
-        always #1 clk = !clk;
-
-        initial begin
-
-            FREQ <= 1'b1;
-            #0.1 FREQ <= 1'b0;
-            #0.1 FREQ <= 1'b1;
-            #0.1 FREQ <= 1'b0;
-            #0.1 FREQ <= 1'b1;
-            #0.1 FREQ <= 1'b0;
-            #0.1 FREQ <= 1'b1;
-
-        end
-
-        initial #50 $finish;
-
-endmodule

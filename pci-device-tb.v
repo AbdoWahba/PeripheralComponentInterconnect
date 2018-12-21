@@ -6,7 +6,14 @@ module Device_tb();
     wire REQA, REQB, FRAME, DEVSEL, IRDY, TRDY;
     wire [4:0] GNT;
 
+    /**
+    *   Make all signals HIGH by default
+    */
     pullup(FRAME);
+    pullup(IRDY);
+    pullup(TRDY);
+    pullup(DEVSEL);
+
 
     Device  devA(
         clk,
