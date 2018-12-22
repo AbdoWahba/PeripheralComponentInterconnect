@@ -51,6 +51,13 @@ module Device (
         inout   TRDY,
 
         input [31:0] DEVICE_ADDRESS
+
+        /**
+        *   TARGET_ADDRESS,
+        *   OPERATION,
+        *   DATA,
+        *   C_BE_INPUT,
+        */
         );
 
 
@@ -58,7 +65,7 @@ module Device (
     /**
     *   ? Device Memory
     */
-    reg [31:0] DATA [10];    reg [4:0] DATA_BE [10];    integer DATA_INDIX;
+    reg [31:0] DATA [10];    reg [4:0] DATA_BE [10];    integer DATA_INDIX = 0;
     initial begin
         /**
         *   initialize with random data
@@ -74,6 +81,9 @@ module Device (
         DATA[8] <= `DATA_3;
         DATA[9] <= `DATA_1;
 
+        /**
+        *   FOR testing only DATA_BE
+        */
         DATA_BE[0] <= `BIT_ENABLE_1;
         DATA_BE[1] <= `BIT_ENABLE_2;
         DATA_BE[2] <= `BIT_ENABLE_3;
@@ -87,14 +97,31 @@ module Device (
     end
 
     /**
+    *   to save current operation read or write
+    *       By default write operation
+    */
+    reg [3:0] control_operation = `WRITE_C_BE;
+
+    /**
     *   AD
     *       If Master and Write op ADreg Assigned to AD treat as output
     *       If not Master AD treat as input
     *       for first transaction "writing address of target" AD must be output
-    *       TODO: Must be input in read op
+    *       TODO: Must be input in read op 
     */
     reg [31:0] ADreg;
-    assign AD = (~isGrantedAsMaster) ? ADreg : 32'hzzzzzzzz;
+    assign AD = (~isGrantedAsMaster && control_operation == `WRITE_C_BE) ? ADreg : (~isGrantedAsTarget && control_operation == `READ_C_BE) ? ADreg : 32'hzzzzzzzz;
+
+    /**
+    *   To be tested
+    */
+    reg ADtreggered = 1'b0;
+    /* always @ (AD) begin
+        if(AD == 32'hzzzzzzzz && ~ADtreggered && ~FRAME) begin
+            repeat(1)@(negedge clk);
+            ADtreggered <= 1'b1;
+        end
+    end */
 
     /**
     *   C_BE
@@ -128,9 +155,10 @@ module Device (
     /**
     *   FRAME
     */
+    reg FRAMEreg = 1'b1;
+    assign FRAME = (~isGrantedAsMaster) ? FRAMEreg : 1'bz;
     
     /** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** */
-
     /**
     *   GNT
     *       GNT Flag indecate State of device => Master
@@ -143,14 +171,8 @@ module Device (
         if(~GNT) isGrantedAsMaster <= 1'b0;
     end
     
-    reg FRAMEreg = 1'b1;
-    assign FRAME = (~isGrantedAsMaster) ? FRAMEreg : 1'bz;
+    
 
-    /**
-    *   to save current operation read or write
-    *       By default write operation
-    */
-    reg [3:0] control_operation = `WRITE_C_BE;
     
     /** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** */
     /** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** */
@@ -192,6 +214,8 @@ module Device (
     *   addressTransactionOccurredFlag to indecate 1st transaction of selecting
     */
     reg addressTransactionOccurredFlag = 1'b1;
+
+    
     always @ (negedge clk) begin
 
         /**
@@ -203,16 +227,14 @@ module Device (
         *   * DATA added to AD when target selected => DEVSEL goes ZERO
         */
         if(addressTransactionOccurredFlag) begin
-            if (~isGrantedAsMaster) FRAMEreg <= 1'b0;
-            if (~isGrantedAsMaster) ADreg <= `DEVICE_B_ADDRESS;
             if (~isGrantedAsMaster) begin
-                C_BEreg <= `WRITE_C_BE;
-                control_operation <= `WRITE_C_BE;
+                FRAMEreg <= 1'b0;
+                ADreg <= `DEVICE_B_ADDRESS;
+                C_BEreg <= `READ_C_BE;
+                addressTransactionOccurredFlag <= 1'b0;
+                DATA_INDIX <= numberOfTransactions; /** To start indixing from 0 DATA_INDIX_WRITE **/
             end
-            if (~isGrantedAsMaster) addressTransactionOccurredFlag <= 1'b0;
-
-            if (~isGrantedAsMaster) DATA_INDIX <= numberOfTransactions; /** To start indixing from 0 DATA_INDIX_WRITE **/
-        end
+        end 
 
         /**
         *   at negedge of last transaction
@@ -223,16 +245,28 @@ module Device (
         end
     end
 
+    always @ (negedge DEVSEL) begin
+        control_operation <= `READ_C_BE;
+        IRDYreg <= 1'b0;
+    end
+
     /**
     *   at negedge after last transaction
     *   IRDY = HIGH && isGrantedAsMaster = HIGH
     */
     always @ (negedge clk) begin
         if(FRAMEreg && ~isGrantedAsMaster && numberOfTransactions == 4'b0000) begin
+            /**
+            *   Defaults
+            */
             IRDYreg <= 1'b1;
             isGrantedAsMaster <= 1'b1;
+            control_operation <= `WRITE_C_BE;
+            addressTransactionOccurredFlag = 1'b1;
         end
     end
+
+
 
     /** ** ** ** ** * ** * * ** * * * **  **/
 
@@ -242,6 +276,10 @@ module Device (
     */
 
 
+    /**
+    *   For Write operation only 
+    *       All condisions for write operation only
+    */
     always @ (negedge clk or negedge TRDY) begin
         if(~DEVSEL && ~TRDY && ~isGrantedAsMaster && control_operation == `WRITE_C_BE && (numberOfTransactions != 4'b0000)) begin
                 ADreg <= DATA [DATA_INDIX - numberOfTransactions];
@@ -251,8 +289,22 @@ module Device (
         end
     end
 
-    /** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** */
-    /** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** */
+    /**
+    *   Data transaction -- Read operation
+    */
+
+    always @(posedge clk) begin
+        if(~DEVSEL && ~TRDY && ~isGrantedAsMaster && control_operation == `READ_C_BE && (numberOfTransactions != 4'b0000))begin
+                /** read AD write in DATA memory */
+                numberOfTransactions = numberOfTransactions - 1;
+                DATA[DATA_INDIX] <= AD;
+                DATA_INDIX = DATA_INDIX + 1;
+                if (DATA_INDIX == 10)begin
+                    DATA_INDIX = 0;
+                end
+        end
+    end
+
     /** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** */
     /** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** */
     /** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** ** ** ** ** * *** ** */
@@ -310,6 +362,19 @@ module Device (
             isGrantedAsTarget <= 1'b1;
         end
     end
+
+
+    always @ (negedge clk) begin 
+        if (~IRDY && ~DEVSEL && ~FRAME && control_operation == `READ_C_BE && ~isGrantedAsTarget) begin
+            ADreg <= DATA[DATA_INDIX];
+            TRDYreg = 1'b0;
+            DATA_INDIX = DATA_INDIX + 1;
+            if (DATA_INDIX == 10)begin
+                DATA_INDIX = 0;
+            end
+
+        end
+    end 
 
 endmodule
 
