@@ -38,6 +38,7 @@ module Device_tb();
         IRDY,
         TRDY ,
         `DEVICE_A_ADDRESS,
+
         FREQA,
         TARGET_ADDRESS,
         OPERATION
@@ -54,6 +55,7 @@ module Device_tb();
         IRDY,
         TRDY,
         `DEVICE_B_ADDRESS,
+
         FREQB,
         TARGET_ADDRESS,
         OPERATION
@@ -71,6 +73,8 @@ module Device_tb();
         TRDY,
         `DEVICE_C_ADDRESS,
         FREQC,
+        
+        
         TARGET_ADDRESS,
         OPERATION
         );
