@@ -1,3 +1,10 @@
+// for modelsim
+`define DEVICE_A_ADDRESS 32'hAD
+`define DEVICE_B_ADDRESS 32'hBD
+`define DEVICE_C_ADDRESS 32'hCD
+`timescale 1ns/1ps
+
+
 module Device_tb();
     
     /**
@@ -23,7 +30,6 @@ module Device_tb();
     Device  devA(
         clk,
         REQA,
-        FREQA,
         GNT[4],
         AD,
         C_BE,
@@ -32,7 +38,7 @@ module Device_tb();
         IRDY,
         TRDY ,
         `DEVICE_A_ADDRESS,
-
+        FREQA,
         TARGET_ADDRESS,
         OPERATION
         );
@@ -40,7 +46,6 @@ module Device_tb();
     Device  devB(
         clk,
         REQB,
-        FREQB,
         GNT[3],
         AD,
         C_BE,
@@ -49,7 +54,7 @@ module Device_tb();
         IRDY,
         TRDY,
         `DEVICE_B_ADDRESS,
-
+        FREQB,
         TARGET_ADDRESS,
         OPERATION
         );
@@ -57,7 +62,6 @@ module Device_tb();
     Device  devc(
         clk,
         REQC,
-        FREQC,
         GNT[2],
         AD,
         C_BE,
@@ -66,7 +70,7 @@ module Device_tb();
         IRDY,
         TRDY,
         `DEVICE_C_ADDRESS,
-
+        FREQC,
         TARGET_ADDRESS,
         OPERATION
         );
@@ -92,6 +96,8 @@ module Device_tb();
     always #1 clk = !clk;
 
     initial begin
+         TARGET_ADDRESS <= 32'hBD;
+         OPERATION <= 4'b0010;
         /**
         *   force request Device A for 3 transactions
         */
@@ -107,10 +113,15 @@ module Device_tb();
 
     initial begin
         /**
-        *   force request Device B for 1 transaction after 5 unit time
+        *   force request Device B for 2 transaction after 5 unit time
         */
+
         #5 FREQB <= 1'b0;
         #1 FREQB <= 1'b1;
+
+        #1 FREQB <= 1'b0;
+        #1 FREQB <= 1'b1;
+         TARGET_ADDRESS <= 32'hAD;
     end
 
     initial #1000 $finish;
