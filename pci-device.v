@@ -134,7 +134,9 @@ module Device (
     *       input as Master and output as Target
     */
     reg DEVSELreg = 1'b1;
-    assign DEVSEL = (~isGrantedAsMaster) ? 1'bz : DEVSELreg;
+    assign DEVSEL = (~isGrantedAsTarget) ?  DEVSELreg : 1'bz;
+    
+    // assign DEVSEL = (~isGrantedAsMaster) ? 1'bz : DEVSELreg; // ERROR Should be z by default
 
     /**
     *   IRDY
@@ -148,7 +150,9 @@ module Device (
     *       input as Master and output as Target
     */
     reg TRDYreg = 1'b1;
-    assign TRDY = (~isGrantedAsMaster) ? 1'bz : TRDYreg;
+    assign TRDY = (~isGrantedAsTarget) ? TRDYreg : 1'bz;
+
+    // assign TRDY = (~isGrantedAsMaster) ? 1'bz : TRDYreg;
 
     /**
     *   FRAME
@@ -241,8 +245,10 @@ module Device (
     *   At negedge of DEVSEL, Defining the control operation if read or write depending on the OPERATION input
     */
     always @ (negedge DEVSEL) begin
-        control_operation <= OPERATION; // `WRITE_C_BE
-        IRDYreg <= 1'b0;
+        if(~isGrantedAsMaster)begin
+            control_operation <= OPERATION; // `WRITE_C_BE
+            IRDYreg <= 1'b0;
+        end
     end
 
     /**
@@ -273,10 +279,10 @@ module Device (
     */
     always @ (negedge clk or negedge TRDY) begin
         if(~DEVSEL && ~TRDY && ~isGrantedAsMaster && control_operation == `WRITE_C_BE && (numberOfTransactions != 4'b0000)) begin
-                ADreg <= DATA [DATA_INDIX - numberOfTransactions];
-                C_BEreg <= DATA_BE[DATA_INDIX - numberOfTransactions];
-                IRDYreg <= 1'b0;
-                numberOfTransactions = numberOfTransactions - 1;
+            ADreg <= DATA [DATA_INDIX - numberOfTransactions];
+            C_BEreg <= DATA_BE[DATA_INDIX - numberOfTransactions];
+            IRDYreg <= 1'b0;
+            numberOfTransactions = numberOfTransactions - 1;
         end
     end
 
