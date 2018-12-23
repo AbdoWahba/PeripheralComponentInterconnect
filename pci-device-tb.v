@@ -101,7 +101,7 @@ module Device_tb();
 
     initial begin
          TARGET_ADDRESS <= 32'hBD;
-         OPERATION <= 4'b0010;
+         OPERATION <= 4'b0011;
         /**
         *   force request Device A for 3 transactions
         */
@@ -117,15 +117,47 @@ module Device_tb();
 
     initial begin
         /**
-        *   force request Device B for 2 transaction after 5 unit time
+        *   force request Device B for 2 transaction after A finishes
         */
 
-        #5 FREQB <= 1'b0;
-        #1 FREQB <= 1'b1;
+        #16 TARGET_ADDRESS <= 32'hAD;
+        #0.1 FREQB <= 1'b0;
+        #0.1 FREQB <= 1'b1;
 
-        #1 FREQB <= 1'b0;
-        #1 FREQB <= 1'b1;
-         TARGET_ADDRESS <= 32'hAD;
+        #0.1 FREQB <= 1'b0;
+        #0.1 FREQB <= 1'b1;
+
+    end
+
+    initial begin
+        /**
+        *   force request Device c for 2 transaction one for A and the other for B
+        */
+	
+        #30
+        #0.1 FREQC <= 1'b0;
+        #0.1 FREQC <= 1'b1;
+	 if( !GNT[2]) TARGET_ADDRESS <= 32'hAD;
+
+        #0.1 FREQC <= 1'b0;
+        #0.1 FREQC <= 1'b1;
+	 if(! GNT[2]) TARGET_ADDRESS <= 32'hBD;
+
+    end
+
+    initial begin
+        /**
+        *   force request Device A for 2 transactions for C 
+        */
+
+        #30 
+        #0.1 FREQA <= 1'b0;
+        #0.1 FREQA <= 1'b1;
+
+        #0.1 FREQA <= 1'b0;
+        #0.1 FREQA <= 1'b1;
+	#4 if( !GNT[4]) TARGET_ADDRESS <= 32'hCD; //after 2 cycles to check gnt
+
     end
 
     initial #1000 $finish;
