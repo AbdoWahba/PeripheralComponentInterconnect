@@ -3,6 +3,25 @@
 `define DEVICE_B_ADDRESS 32'hBD
 `define DEVICE_C_ADDRESS 32'hCD
 `timescale 1ns/1ps
+`define WRITE_C_BE 4'b0011
+`define READ_C_BE 4'b0010
+
+
+
+/**
+*   dumy/random data for transactions
+*/
+
+`define DATA_1 32'hAA
+`define DATA_2 32'hBB
+`define DATA_3 32'hCC
+`define DATA_4 32'hAAA
+`define DATA_5 32'hBBB
+`define DATA_6 32'hCCC
+`define DATA_7 32'hAAAA
+`define DATA_8 32'hBBBB
+`define DATA_9 32'hCCCC
+`define DATA_10 32'hA
 
 
 module Device_tb();
@@ -41,7 +60,8 @@ module Device_tb();
 
         FREQA,
         TARGET_ADDRESS,
-        OPERATION
+        OPERATION,
+        32'hAAAAAAAA
         );
 
     Device  devB(
@@ -58,7 +78,8 @@ module Device_tb();
 
         FREQB,
         TARGET_ADDRESS,
-        OPERATION
+        OPERATION,
+        32'hBBBBBBBB
         );
 
     Device  devc(
@@ -72,11 +93,12 @@ module Device_tb();
         IRDY,
         TRDY,
         `DEVICE_C_ADDRESS,
+        
+        
         FREQC,
-        
-        
         TARGET_ADDRESS,
-        OPERATION
+        OPERATION,
+        32'hCCCCCCCC
         );
 
 
@@ -99,11 +121,12 @@ module Device_tb();
 
     always #1 clk = !clk;
 
+
     initial begin
-         TARGET_ADDRESS <= 32'hBD;
-         OPERATION <= 4'b0011;
+        TARGET_ADDRESS <= `DEVICE_B_ADDRESS;
+        OPERATION <= `WRITE_C_BE;
         /**
-        *   force request Device A for 3 transactions
+        *   force request Device A for 3 Data Transmission
         */
         #0.1 FREQA <= 1'b0;
         #0.1 FREQA <= 1'b1;
@@ -137,11 +160,11 @@ module Device_tb();
         #30
         #0.1 FREQC <= 1'b0;
         #0.1 FREQC <= 1'b1;
-	 if( !GNT[2]) TARGET_ADDRESS <= 32'hAD;
+	    if( !GNT[2]) TARGET_ADDRESS <= 32'hAD;
 
         #0.1 FREQC <= 1'b0;
         #0.1 FREQC <= 1'b1;
-	 if(! GNT[2]) TARGET_ADDRESS <= 32'hBD;
+	    if(! GNT[2]) TARGET_ADDRESS <= 32'hBD;
 
     end
 
@@ -156,7 +179,7 @@ module Device_tb();
 
         #0.1 FREQA <= 1'b0;
         #0.1 FREQA <= 1'b1;
-	#4 if( !GNT[4]) TARGET_ADDRESS <= 32'hCD; //after 2 cycles to check gnt
+	#4 if( !GNT[4]) TARGET_ADDRESS <= 32'hBD; //after 2 cycles to check gnt
 
     end
 

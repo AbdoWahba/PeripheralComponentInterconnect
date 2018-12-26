@@ -64,7 +64,8 @@ module Device (
         */
         input   FREQ, // To force request Bus && determine number of required transactions
         input [31:0] TARGET_ADDRESS, // Select target to Communicate with
-        input [3:0]  OPERATION  // `WRITE_C_BE / `READ_C_BE
+        input [3:0]  OPERATION,  // `WRITE_C_BE / `READ_C_BE
+        input [31:0] DATA_DEVICE
         );
 
 
@@ -74,22 +75,7 @@ module Device (
     */
     reg [31:0] DATA [10];    reg [4:0] DATA_BE [10];    integer DATA_INDIX = 0;
 
-
     initial begin
-        /**
-        *   initialize with random data
-        */
-        DATA[0] <= `DATA_1;
-        DATA[1] <= `DATA_2;
-        DATA[2] <= `DATA_3;
-        DATA[3] <= `DATA_4;
-        DATA[4] <= `DATA_5;
-        DATA[5] <= `DATA_6;
-        DATA[6] <= `DATA_7;
-        DATA[7] <= `DATA_8;
-        DATA[8] <= `DATA_9;
-        DATA[9] <= `DATA_10;
-
         /**
         *   FOR testing only DATA_BE
         */
@@ -279,7 +265,7 @@ module Device (
     */
     always @ (negedge clk or negedge TRDY) begin
         if(~DEVSEL && ~TRDY && ~isGrantedAsMaster && control_operation == `WRITE_C_BE && (numberOfTransactions != 4'b0000)) begin
-            ADreg <= DATA [DATA_INDIX - numberOfTransactions];
+            ADreg <= DATA_DEVICE + numberOfTransactions; //DATA [DATA_INDIX - numberOfTransactions]; // + numberOfTransactions For testing only
             C_BEreg <= DATA_BE[DATA_INDIX - numberOfTransactions];
             IRDYreg <= 1'b0;
             numberOfTransactions = numberOfTransactions - 1;
@@ -358,21 +344,10 @@ module Device (
     /**
     *   Write data from bus to memory
     */
-    reg [7:0] commingData [4];
     always @(posedge clk) begin
         if(~DEVSEL && ~IRDY && ~isGrantedAsTarget && control_operation == `WRITE_C_BE)begin
-            /** read AD write in DATA memory */
-            commingData [0] <= AD[ 7: 0];
-            commingData [1] <= AD[15: 8];
-            commingData [2] <= AD[23:16];
-            commingData [3] <= AD[31:24];
 
-            // DATA[DATA_INDIX] <= AD;
-
-            DATA[DATA_INDIX][ 7: 0] <= (C_BE[0]) ? commingData[0] : DATA[DATA_INDIX][ 7: 0];
-            DATA[DATA_INDIX][15: 8] <= (C_BE[1]) ? commingData[1] : DATA[DATA_INDIX][15: 8];
-            DATA[DATA_INDIX][23:16] <= (C_BE[2]) ? commingData[2] : DATA[DATA_INDIX][23:16];
-            DATA[DATA_INDIX][31:24] <= (C_BE[3]) ? commingData[3] : DATA[DATA_INDIX][31:24];
+            DATA[DATA_INDIX] <= AD;
 
             DATA_INDIX = DATA_INDIX + 1;
             if (DATA_INDIX == 9)begin
@@ -401,7 +376,7 @@ module Device (
     */
     always @ (negedge clk) begin 
         if (~IRDY && ~DEVSEL && ~FRAME && control_operation == `READ_C_BE && ~isGrantedAsTarget) begin
-            ADreg <= DATA[DATA_INDIX];
+            ADreg <= DATA_DEVICE; //DATA[DATA_INDIX];
             TRDYreg = 1'b0;
             DATA_INDIX = DATA_INDIX + 1;
             if (DATA_INDIX == 9)begin
@@ -414,17 +389,25 @@ module Device (
     /**
     *   Restore Defaults In Target
     */
+    reg FrameHighFlag = 1'b1;
+    always @ (posedge FRAME) begin
+        FrameHighFlag <= 1'b0;
+    end
+
     always @ (posedge FRAME) begin
         if(FRAME && ~isGrantedAsTarget) begin
             /**
             *   Defaults
             */
-            repeat(1)@(posedge clk);
-            IRDYreg <= 1'b1;
-            isGrantedAsMaster <= 1'b1;
-            control_operation <= `WRITE_C_BE;
-            addressTransactionOccurredFlag = 1'b1;
-            DATA_INDIX <= 1'b0;
+            // repeat(1)@(posedge clk);
+            if(~FrameHighFlag)begin
+                IRDYreg <= 1'b1;
+                isGrantedAsMaster <= 1'b1;
+                control_operation <= `WRITE_C_BE;
+                addressTransactionOccurredFlag = 1'b1;
+                DATA_INDIX <= 1'b0;
+                FrameHighFlag <= 1'b1;
+            end
         end
     end
 

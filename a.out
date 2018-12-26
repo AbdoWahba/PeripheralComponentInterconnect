@@ -1,0 +1,56 @@
+#! /usr/bin/vvp
+:ivl_version "10.1 (stable)";
+:ivl_delay_selection "TYPICAL";
+:vpi_time_precision + 0;
+:vpi_module "system";
+:vpi_module "vhdl_sys";
+:vpi_module "v2005_math";
+:vpi_module "va_math";
+S_0x556cdb45c390 .scope module, "DeviceA" "DeviceA" 2 9;
+ .timescale 0 0;
+    .port_info 0 /INPUT 1 "clk"
+    .port_info 1 /INPUT 1 "GNTA"
+    .port_info 2 /INPUT 1 "DEVSEL"
+    .port_info 3 /INPUT 1 "TRDY"
+    .port_info 4 /INPUT 32 "AD"
+    .port_info 5 /OUTPUT 1 "REQA"
+    .port_info 6 /OUTPUT 1 "FRAME"
+    .port_info 7 /OUTPUT 1 "IRDY"
+    .port_info 8 /OUTPUT 32 "AD_reg"
+    .port_info 9 /OUTPUT 4 "C_BE"
+o0x7f76227de018 .functor BUFZ 32, C4<zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz>; HiZ drive
+v0x556cdb45c610_0 .net "AD", 31 0, o0x7f76227de018;  0 drivers
+v0x556cdb47c570_0 .var "AD_reg", 31 0;
+o0x7f76227de078 .functor BUFZ 4, C4<zzzz>; HiZ drive
+v0x556cdb47c650_0 .net "C_BE", 3 0, o0x7f76227de078;  0 drivers
+o0x7f76227de0a8 .functor BUFZ 1, C4<z>; HiZ drive
+v0x556cdb47c710_0 .net "DEVSEL", 0 0, o0x7f76227de0a8;  0 drivers
+o0x7f76227de0d8 .functor BUFZ 1, C4<z>; HiZ drive
+v0x556cdb47c7d0_0 .net "FRAME", 0 0, o0x7f76227de0d8;  0 drivers
+v0x556cdb47c8e0_0 .var "FRAME_reg", 0 0;
+o0x7f76227de138 .functor BUFZ 1, C4<z>; HiZ drive
+v0x556cdb47c9a0_0 .net "GNTA", 0 0, o0x7f76227de138;  0 drivers
+v0x556cdb47ca60_0 .var "IRDY", 0 0;
+o0x7f76227de198 .functor BUFZ 1, C4<z>; HiZ drive
+v0x556cdb47cb20_0 .net "REQA", 0 0, o0x7f76227de198;  0 drivers
+o0x7f76227de1c8 .functor BUFZ 1, C4<z>; HiZ drive
+v0x556cdb47cbe0_0 .net "TRDY", 0 0, o0x7f76227de1c8;  0 drivers
+o0x7f76227de1f8 .functor BUFZ 1, C4<z>; HiZ drive
+v0x556cdb47cca0_0 .net "clk", 0 0, o0x7f76227de1f8;  0 drivers
+E_0x556cdb4591a0 .event negedge, v0x556cdb47c9a0_0;
+    .scope S_0x556cdb45c390;
+T_0 ;
+    %wait E_0x556cdb4591a0;
+    %pushi/vec4 0, 0, 1;
+    %assign/vec4 v0x556cdb47c8e0_0, 0;
+    %load/vec4 v0x556cdb45c610_0;
+    %assign/vec4 v0x556cdb47c570_0, 0;
+    %pushi/vec4 0, 0, 1;
+    %assign/vec4 v0x556cdb47ca60_0, 5;
+    %jmp T_0;
+    .thread T_0;
+# The file index is used to find the file name in the following table.
+:file_names 3;
+    "N/A";
+    "<interactive>";
+    "PCI-Device-V2.v";
