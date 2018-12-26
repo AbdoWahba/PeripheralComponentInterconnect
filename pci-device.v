@@ -75,9 +75,6 @@ module Device (
     */
     reg [31:0] DATA [10];    reg [4:0] DATA_BE [10];    integer DATA_INDIX = 0;
 
-    output wire [31:0] temp;
-    assign temp = DATA[0];
-
     initial begin
         /**
         *   FOR testing only DATA_BE
@@ -392,17 +389,25 @@ module Device (
     /**
     *   Restore Defaults In Target
     */
+    reg FrameHighFlag = 1'b1;
+    always @ (posedge FRAME) begin
+        FrameHighFlag <= 1'b0;
+    end
+
     always @ (posedge FRAME) begin
         if(FRAME && ~isGrantedAsTarget) begin
             /**
             *   Defaults
             */
-            repeat(1)@(posedge clk);
-            IRDYreg <= 1'b1;
-            isGrantedAsMaster <= 1'b1;
-            control_operation <= `WRITE_C_BE;
-            addressTransactionOccurredFlag = 1'b1;
-            DATA_INDIX <= 1'b0;
+            // repeat(1)@(posedge clk);
+            if(~FrameHighFlag)begin
+                IRDYreg <= 1'b1;
+                isGrantedAsMaster <= 1'b1;
+                control_operation <= `WRITE_C_BE;
+                addressTransactionOccurredFlag = 1'b1;
+                DATA_INDIX <= 1'b0;
+                FrameHighFlag <= 1'b1;
+            end
         end
     end
 
